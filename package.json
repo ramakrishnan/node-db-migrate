@@ -1,7 +1,7 @@
 {
   "name": "db-migrate",
   "description": "Database migration framework for node.js",
-  "author": "Jeff Kunkle",
+  "author": "Tobias Gurtick",
   "bin": "./bin/db-migrate",
   "keywords": [
     "database",
@@ -9,19 +9,39 @@
     "migrate",
     "migration",
     "sqlite",
-    "mysql"
+    "mysql",
+    "pg",
+    "postgre",
+    "sql",
+    "migrations",
+    "db-migrate",
+    "postgresql",
+    "extensible",
+    "expandable",
+    "nosql",
+    "coffee",
+    "coffescript",
+    "mongo",
+    "mongodb",
+    "seed",
+    "seeds",
+    "seeder",
+    "migrator",
+    "programatic",
+    "programable",
+    "api"
   ],
   "version": "0.9.12",
   "engines": {
     "node": ">=0.6.0"
   },
   "bugs": {
-    "url": "https://github.com/kunklejr/node-db-migrate/issues"
+    "url": "https://github.com/db-migrate/node-db-migrate/issues"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kunklejr/node-db-migrate.git"
+    "url": "https://github.com/db-migrate/node-db-migrate.git"
   },
   "dependencies": {
     "async": "^1.0.0",
@@ -31,14 +51,13 @@
     "mkdirp": "~0.5.0",
     "moment": "~2.10.2",
     "mongodb": "^2.0.23",
-    "mysql": "~2.7.0",
+    "mysql": "~2.9.0",
     "optimist": "~0.6.1",
     "parse-database-url": "~0.2.2",
     "pg": "~4.4.0",
-    "pg-native": "^1.8.0",
     "pkginfo": "~0.3.0",
     "resolve": "^1.1.6",
-    "semver": "~4.3.3",
+    "semver": "~5.0.1",
     "sqlite3": "~3.0.4",
     "tunnel-ssh": "^1.0.0",
     "cassandra-driver": "~2.1.0"
