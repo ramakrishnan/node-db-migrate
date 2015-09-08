@@ -55,10 +55,10 @@ function dbmigrate(isModule, options, callback) {
   if(typeof(isModule) === 'function')
   {
     this.internals.onComplete = isModule;
-    setDefaultArgv();
+    setDefaultArgv(this.internals);
   }
   else
-    setDefaultArgv(isModule);
+    setDefaultArgv(this.internals, isModule);
 
   loadConfig();
   index.exportInternals(internals);
@@ -147,7 +147,7 @@ dbmigrate.prototype = {
     *
     * Defaults to up all migrations if no count is given.
     */
-  up: function(specification, scope) {
+  up: function(specification, scope, callback) {
 
     if(arguments.length > 0)
     {
@@ -166,7 +166,7 @@ dbmigrate.prototype = {
       }
     }
 
-    executeUp( this.internals );
+    executeUp( this.internals, callback );
   },
 
   /**
@@ -174,7 +174,7 @@ dbmigrate.prototype = {
     *
     * Defaults to up all migrations if no count is given.
     */
-  down: function(specification, scope) {
+  down: function(specification, scope, callback) {
 
     if(arguments.length > 0)
     {
@@ -189,13 +189,13 @@ dbmigrate.prototype = {
       }
     }
 
-    executeDown( this.internals );
+    executeDown( this.internals, callback );
   },
 
   /**
     * Executes down for all currently migrated migrations.
     */
-  reset: function(scope) {
+  reset: function(scope, callback) {
 
     if(scope) {
 
@@ -203,7 +203,7 @@ dbmigrate.prototype = {
     }
 
     this.internals.argv.count = Number.MAX_VALUE;
-    executeDown( this.internals );
+    executeDown( this.internals, callback );
   },
 
   /**
@@ -235,21 +235,21 @@ dbmigrate.prototype = {
   /**
     * Creates a database of the given dbname.
     */
-  createDatabase: function(dbname) {
+  createDatabase: function(dbname, callback) {
 
     this.internals.argv._.push(dbname);
     this.internals.mode = 'create';
-    executeDB( this.internals );
+    executeDB( this.internals, callback );
   },
 
   /**
     * Drops a database of the given dbname.
     */
-  dropDatabase: function(dbname) {
+  dropDatabase: function(dbname, callback) {
 
     this.internals.argv._.push(dbname);
     this.internals.mode = 'drop';
-    executeDB( this.internals );
+    executeDB( this.internals, callback );
   },
 
   /**
@@ -284,7 +284,7 @@ dbmigrate.prototype = {
     * Seeds either the static or version controlled seeders, controlled by
     * the passed mode.
     */
-  seed: function(mode, scope) {
+  seed: function(mode, scope, callback) {
 
     if(scope) {
 
@@ -292,13 +292,13 @@ dbmigrate.prototype = {
     }
 
     this.internals.mode = mode || 'vc';
-    executeSeed( this.internals );
+    executeSeed( this.internals, callback );
   },
 
   /**
     * Execute the down function of currently executed seeds.
     */
-  undoSeed: function( specification, scope ) {
+  undoSeed: function( specification, scope, callback ) {
 
     if(arguments.length > 0)
     {
@@ -329,7 +329,7 @@ dbmigrate.prototype = {
 
 };
 
-function setDefaultArgv(isModule) {
+function setDefaultArgv(internals, isModule) {
 
   internals.argv = optimist
       .default({
@@ -469,12 +469,12 @@ function loadConfig() {
 }
 
 function executeCreateMigration( internals, callback ) {
-  var migrationsDir = internals.argv['migrations-dir']
+  var migrationsDir = internals.argv['migrations-dir'];
 
   if( internals.migrationMode && internals.migrationMode !== 'all' ) {
 
-    migrationsDir = internals.argv['migrations-dir'] + '/'
-      + internals.migrationMode;
+    migrationsDir = internals.argv['migrations-dir'] + '/' +
+      internals.migrationMode;
   }
 
   var folder, path;
@@ -544,12 +544,12 @@ function shouldCreateCoffeeFile() {
 }
 
 function createSqlFiles( internals, callback ) {
-  var migrationsDir = internals.argv['migrations-dir']
+  var migrationsDir = internals.argv['migrations-dir'];
 
   if( internals.migrationMode && internals.migrationMode !== 'all' ) {
 
-    migrationsDir = internals.argv['migrations-dir'] + '/'
-      + internals.migrationMode;
+    migrationsDir = internals.argv['migrations-dir'] + '/' +
+      internals.migrationMode;
   }
 
   var sqlDir = migrationsDir + '/sqls';
@@ -606,7 +606,7 @@ function _assert( err, callback ) {
   return true;
 }
 
-function executeUp( internals ) {
+function executeUp( internals, callback ) {
 
   if(!internals.argv.count) {
     internals.argv.count = Number.MAX_VALUE;
@@ -623,15 +623,17 @@ function executeUp( internals ) {
     else
       migrator.migrationsDir = path.resolve(internals.argv['migrations-dir']);
 
+    internals.migrationsDir = migrator.migrationsDir;
+
     migrator.driver.createMigrationsTable(function(err) {
       assert.ifError(err);
       log.verbose('migration table created');
-      migrator.up(internals.argv, internals.onComplete.bind(this, migrator));
+      migrator.up(internals.argv, internals.onComplete.bind(this, migrator, callback));
     });
   });
 }
 
-function executeDown( internals ) {
+function executeDown( internals, callback ) {
 
   if(!internals.argv.count) {
     log.info('Defaulting to running 1 down migration.');
@@ -648,12 +650,12 @@ function executeDown( internals ) {
 
     migrator.driver.createMigrationsTable(function(err) {
       assert.ifError(err);
-      migrator.down(internals.argv, internals.onComplete.bind(this, migrator));
+      migrator.down(internals.argv, internals.onComplete.bind(this, migrator, callback));
     });
   });
 }
 
-function executeDB( internals ) {
+function executeDB( internals, callback ) {
 
   if(internals.argv._.length > 0) {
     internals.argv.dbname = internals.argv._.shift().toString();
@@ -678,6 +680,7 @@ function executeDB( internals ) {
         }
 
         db.close();
+        callback();
       });
     }
     else if(internals.mode === 'drop')
@@ -692,6 +695,7 @@ function executeDB( internals ) {
         }
 
         db.close();
+        callback();
       });
     }
     else
@@ -717,7 +721,7 @@ function executeSeed( internals, callback ) {
 
     if(internals.mode === 'static') {
 
-      seeder.seed(internals.argv, internals.onComplete.bind(this, seeder));
+      seeder.seed(internals.argv, internals.onComplete.bind(this, seeder, callback));
     }
     else {
       seeder.createSeedsTable(function(err) {
